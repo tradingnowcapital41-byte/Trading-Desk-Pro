@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Desk Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #040608;
+    --bg-secondary: #080d12;
+    --bg-card: #0c1219;
+    --bg-card2: #0f1720;
+    --border: #1a2535;
+    --border-glow: #1e3a5f;
+    --accent: #00d4ff;
+    --accent2: #0099cc;
+    --green: #00e676;
+    --red: #ff3d71;
+    --yellow: #ffd740;
+    --text-primary: #e8f4fd;
+    --text-secondary: #6a8a9f;
+    --text-dim: #3a5570;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Outfit', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--sans); background:var(--bg-primary); color:var(--text-primary); min-height:100vh; overflow-x:hidden; }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image: linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+    background-size:40px 40px; pointer-events:none; z-index:0;
+  }
+
+  /* ─── LOGIN ─── */
+  #loginPage { display:flex; align-items:center; justify-content:center; min-height:100vh; position:relative; z-index:10; }
+  .login-glow { position:fixed; width:700px; height:700px; border-radius:50%; background:radial-gradient(circle, rgba(0,212,255,0.07) 0%, transparent 70%); top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
+  .login-box {
+    background:var(--bg-card); border:1px solid var(--border); border-top:2px solid var(--accent);
+    padding:52px 44px; width:430px; position:relative;
+    box-shadow:0 0 80px rgba(0,212,255,0.07), 0 40px 80px rgba(0,0,0,0.7);
+  }
+  .login-box::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg, transparent, var(--accent), transparent); }
+  .login-logo { text-align:center; margin-bottom:40px; }
+  .login-logo .logo-icon { width:60px; height:60px; background:linear-gradient(135deg,var(--accent),#004488); border-radius:14px; display:inline-flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:16px; box-shadow:0 0 30px rgba(0,212,255,0.35); }
+  .login-logo h1 { font-size:26px; font-weight:800; letter-spacing:-0.5px; }
+  .login-logo p { font-size:11px; color:var(--text-secondary); font-family:var(--mono); letter-spacing:2px; text-transform:uppercase; margin-top:5px; }
+  .form-group { margin-bottom:20px; }
+  .form-group label { display:block; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:8px; font-family:var(--mono); }
+  .form-group input { width:100%; background:var(--bg-secondary); border:1px solid var(--border); color:var(--text-primary); padding:13px 16px; font-family:var(--mono); font-size:14px; outline:none; transition:all 0.2s; }
+  .form-group input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,212,255,0.1); }
+  .login-btn { width:100%; background:linear-gradient(135deg,var(--accent),#0077bb); color:#000; border:none; padding:15px; font-family:var(--sans); font-size:15px; font-weight:800; letter-spacing:1px; cursor:pointer; transition:all 0.2s; margin-top:8px; text-transform:uppercase; }
+  .login-btn:hover { opacity:0.88; transform:translateY(-1px); }
+  .login-error { color:var(--red); font-size:12px; font-family:var(--mono); margin-top:12px; text-align:center; display:none; }
+  .creds-hint { font-size:10px; color:var(--text-dim); font-family:var(--mono); text-align:center; margin-top:16px; }
+
+  /* ─── DASHBOARD ─── */
+  #dashboard { display:none; min-height:100vh; position:relative; z-index:10; }
+
+  /* Header */
+  .header { display:flex; align-items:center; justify-content:space-between; padding:0 32px; height:64px; background:rgba(8,13,18,0.96); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; backdrop-filter:blur(12px); }
+  .header-left { display:flex; align-items:center; gap:16px; }
+  .header-logo { display:flex; align-items:center; gap:10px; }
+  .logo-sq { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),#004488); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 0 16px rgba(0,212,255,0.3); }
+  .logo-name { font-size:18px; font-weight:800; letter-spacing:-0.5px; }
+  .logo-name em { color:var(--accent); font-style:normal; }
+  .market-pill { display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10px; color:var(--text-secondary); padding:4px 12px; border:1px solid var(--border); background:var(--bg-secondary); }
+  .mdot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pulse-dot 1.5s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;box-shadow:0 0 6px var(--green);} 50%{opacity:0.4;box-shadow:none;} }
+  .header-right { display:flex; align-items:center; gap:16px; }
+  .live-time { font-family:var(--mono); font-size:13px; color:var(--accent); }
+  .logout-btn { display:flex; align-items:center; gap:6px; background:transparent; border:1px solid var(--border); color:var(--text-secondary); padding:7px 16px; font-family:var(--mono); font-size:11px; letter-spacing:1px; cursor:pointer; text-transform:uppercase; transition:all 0.2s; }
+  .logout-btn:hover { border-color:var(--red); color:var(--red); background:rgba(255,61,113,0.08); }
+  .header-line { position:absolute; bottom:-1px; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0.3; }
+
+  /* Stats */
+  .stats-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border); border-bottom:1px solid var(--border); }
+  .stat-item { background:var(--bg-secondary); padding:16px 24px; }
+  .stat-lbl { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); font-family:var(--mono); margin-bottom:5px; }
+  .stat-val { font-size:28px; font-weight:700; font-family:var(--mono); line-height:1; }
+  .stat-sub { font-size:10px; color:var(--text-dim); font-family:var(--mono); margin-top:3px; }
+  .c-accent{color:var(--accent);} .c-green{color:var(--green);} .c-red{color:var(--red);} .c-yellow{color:var(--yellow);}
+
+  /* Main */
+  .main { padding:24px 32px; }
+  .filter-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
+  .filter-left { display:flex; align-items:center; gap:8px; }
+  .filter-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); font-family:var(--mono); margin-right:4px; }
+  .fbtn { background:var(--bg-card); border:1px solid var(--border); color:var(--text-secondary); padding:6px 14px; font-size:10px; font-family:var(--mono); letter-spacing:1px; cursor:pointer; text-transform:uppercase; transition:all 0.2s; }
+  .fbtn:hover,.fbtn.active { border-color:var(--accent); color:var(--accent); background:rgba(0,212,255,0.06); }
+  .fbtn.f-buy.active { border-color:var(--green); color:var(--green); background:rgba(0,230,118,0.06); }
+  .fbtn.f-sell.active { border-color:var(--red); color:var(--red); background:rgba(255,61,113,0.06); }
+  .refresh-info { font-size:10px; color:var(--text-dim); font-family:var(--mono); display:flex; align-items:center; gap:7px; }
+  .spinner { width:10px; height:10px; border:1.5px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.9s linear infinite; display:none; }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* Table */
+  .table-wrap { background:var(--bg-card); border:1px solid var(--border); overflow:hidden; }
+  table { width:100%; border-collapse:collapse; }
+  thead tr { background:var(--bg-card2); border-bottom:2px solid var(--border-glow); }
+  thead th { padding:12px 16px; text-align:left; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); font-family:var(--mono); font-weight:400; white-space:nowrap; }
+  thead th:first-child{padding-left:20px;}
+  tbody tr { border-bottom:1px solid rgba(26,37,53,0.5); transition:background 0.15s; }
+  tbody tr:hover { background:rgba(0,212,255,0.025); }
+  tbody tr:last-child{border-bottom:none;}
+  tbody td { padding:12px 16px; font-size:13px; font-family:var(--mono); white-space:nowrap; }
+  tbody td:first-child{padding-left:20px;}
+
+  .row-num { color:var(--text-dim); font-size:11px; }
+  .sym-cell { display:flex; align-items:center; gap:10px; }
+  .sym-badge { width:32px; height:32px; border-radius:6px; background:var(--bg-secondary); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:var(--accent); flex-shrink:0; }
+  .sym-name { font-weight:700; font-size:13px; color:var(--text-primary); letter-spacing:0.5px; }
+  .sym-exch { font-size:9px; color:var(--text-dim); display:block; margin-top:1px; }
+
+  /* CMP blink */
+  .cmp-val { font-weight:700; font-size:14px; transition:color 0.3s; display:inline-block; padding:2px 4px; }
+  .cmp-val.flash-up { color:var(--green)!important; text-shadow:0 0 14px rgba(0,230,118,0.8); animation:flash-up-anim 0.45s ease; }
+  .cmp-val.flash-dn { color:var(--red)!important; text-shadow:0 0 14px rgba(255,61,113,0.8); animation:flash-dn-anim 0.45s ease; }
+  @keyframes flash-up-anim { 0%{background:rgba(0,230,118,0.22);} 100%{background:transparent;} }
+  @keyframes flash-dn-anim { 0%{background:rgba(255,61,113,0.22);} 100%{background:transparent;} }
+
+  /* EMA status */
+  .ema-tag { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; font-size:10px; letter-spacing:0.5px; border-radius:2px; font-weight:700; }
+  .ema-tag.above { background:rgba(0,230,118,0.09); border:1px solid rgba(0,230,118,0.22); color:var(--green); }
+  .ema-tag.below { background:rgba(255,61,113,0.07); border:1px solid rgba(255,61,113,0.18); color:#ff7a99; }
+  .ema-num { color:var(--text-secondary); font-size:12px; }
+
+  /* Signal */
+  .sig-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; border-radius:2px; }
+  .sig-badge.buy { background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.35); color:var(--green); animation:glow-buy 2s ease-in-out infinite; }
+  .sig-badge.sell { background:rgba(255,61,113,0.1); border:1px solid rgba(255,61,113,0.35); color:var(--red); animation:glow-sell 2s ease-in-out infinite; }
+  .sig-badge.none { background:rgba(58,85,112,0.1); border:1px solid rgba(58,85,112,0.25); color:#445566; }
+  @keyframes glow-buy { 0%,100%{box-shadow:0 0 6px rgba(0,230,118,0.15);} 50%{box-shadow:0 0 18px rgba(0,230,118,0.4);} }
+  @keyframes glow-sell { 0%,100%{box-shadow:0 0 6px rgba(255,61,113,0.15);} 50%{box-shadow:0 0 18px rgba(255,61,113,0.4);} }
+  .sdot { width:6px; height:6px; border-radius:50%; }
+  .sig-badge.buy .sdot{background:var(--green);} .sig-badge.sell .sdot{background:var(--red);} .sig-badge.none .sdot{background:#445566;}
+
+  .upd-time { color:var(--text-dim); font-size:11px; }
+
+  /* Footer */
+  .footer { padding:14px 32px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; font-size:10px; font-family:var(--mono); color:var(--text-dim); }
+
+  /* Toast */
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--bg-card2); border:1px solid var(--green); border-left:3px solid var(--green); padding:12px 20px; font-family:var(--mono); font-size:11px; color:var(--green); box-shadow:0 8px 32px rgba(0,0,0,0.5); z-index:9999; transform:translateX(120%); transition:transform 0.3s ease; max-width:300px; }
+  .toast.show{transform:translateX(0);}
+
+  /* Loading */
+  .load-row td { text-align:center; padding:52px; color:var(--text-dim); font-family:var(--mono); font-size:12px; }
+  .load-bar { display:inline-block; width:120px; height:2px; background:var(--border); margin-top:14px; position:relative; overflow:hidden; }
+  .load-bar::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:var(--accent); animation:slide 1.1s ease-in-out infinite; }
+  @keyframes slide{to{left:140%;}}
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:5px;height:5px;} ::-webkit-scrollbar-track{background:var(--bg-primary);} ::-webkit-scrollbar-thumb{background:var(--border-glow);border-radius:3px;}
+
+  @media(max-width:860px){
+    .main{padding:14px;} .header{padding:0 14px;} .stats-bar{grid-template-columns:repeat(2,1fr);} .table-wrap{overflow-x:auto;} table{min-width:740px;}
+    .header-logo .logo-name{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage">
+  <div class="login-glow"></div>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-icon">📈</div>
+      <h1>StockPulse Pro</h1>
+      <p>Intraday Signal Screener</p>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">🔐 &nbsp; Access Dashboard</button>
+    <div class="login-error" id="loginError">⚠ Invalid credentials. Please try again.</div>
+    <div class="creds-hint">Default: admin / stock@2025</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="header" style="position:relative;">
+    <div class="header-left">
+      <div class="header-logo">
+        <div class="logo-sq">📈</div>
+        <span class="logo-name">Stock<em>Pulse</em> Pro</span>
+      </div>
+      <div class="market-pill">
+        <div class="mdot"></div>
+        <span id="mktStatus">LIVE</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-time" id="liveTime">--:--:--</div>
+      <button class="logout-btn" onclick="doLogout()">⏻ &nbsp;Logout</button>
+    </div>
+    <div class="header-line"></div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-lbl">Total Stocks</div>
+      <div class="stat-val c-accent" id="sTot">—</div>
+      <div class="stat-sub">NSE Listed</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-lbl">Buy Signals</div>
+      <div class="stat-val c-green" id="sBuy">0</div>
+      <div class="stat-sub">Active Calls</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-lbl">Sell Signals</div>
+      <div class="stat-val c-red" id="sSell">0</div>
+      <div class="stat-sub">Active Calls</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-lbl">Above 100 EMA</div>
+      <div class="stat-val c-yellow" id="sAbove">0</div>
+      <div class="stat-sub">Bullish Bias</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="filter-bar">
+      <div class="filter-left">
+        <span class="filter-title">Filter:</span>
+        <button class="fbtn active" id="fAll" onclick="setFilter('ALL')">All</button>
+        <button class="fbtn f-buy" id="fBuy" onclick="setFilter('BUY')">🟢 Buy</button>
+        <button class="fbtn f-sell" id="fSell" onclick="setFilter('SELL')">🔴 Sell</button>
+        <button class="fbtn" id="fNone" onclick="setFilter('NONE')">No Signal</button>
+        <button class="fbtn" id="fAbove" onclick="setFilter('ABOVE')">▲ Above EMA</button>
+      </div>
+      <div class="refresh-info">
+        <div class="spinner" id="spinner"></div>
+        <span id="refreshTxt">Fetching data...</span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Symbol</th>
+            <th>CMP (₹)</th>
+            <th>100 EMA Status</th>
+            <th>4 EMA</th>
+            <th>16 EMA</th>
+            <th>Signal</th>
+            <th>Last Update</th>
+          </tr>
+        </thead>
+        <tbody id="tBody">
+          <tr class="load-row"><td colspan="8">
+            Fetching live data from sheet...<br>
+            <div class="load-bar"></div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>StockPulse Pro &copy; 2025 — Intraday EMA Screener</span>
+    <span id="fCount">—</span>
+    <span>Source: Google Sheets · Auto-refresh: 30s</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ CONFIG ══
+const CREDS = { user:'admin', pass:'stock@2025' };
+const SHEET_ID = '1tFiO8-rQXWHKEwiFZTI0YbvMlrU1FqkEbsDtVKWv3dY';
+const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet1`;
+
+// ══ STATE ══
+let stocks = [], prevCMPs = {}, filter = 'ALL', refreshTimer = null;
+
+// ══ AUTH ══
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  if (u === CREDS.user && p === CREDS.pass) {
+    sessionStorage.setItem('sp_ok','1');
+    show();
+  } else {
+    document.getElementById('loginError').style.display='block';
+    document.getElementById('loginPass').value='';
+    document.getElementById('loginPass').focus();
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('sp_ok');
+  clearInterval(refreshTimer);
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginError').style.display='none';
+}
+
+function show() {
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  init();
+}
+
+// Enter key
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && document.getElementById('loginPage').style.display!=='none') doLogin();
+});
+
+// Session persist on page refresh
+window.addEventListener('load', () => {
+  if (sessionStorage.getItem('sp_ok')==='1') show();
+});
+
+// ══ CLOCK ══
+function startClock() {
+  const tick = () => {
+    const t = new Date().toLocaleTimeString('en-IN',{hour12:false});
+    document.getElementById('liveTime').textContent = t;
+  };
+  tick(); setInterval(tick, 1000);
+}
+
+// ══ FETCH ══
+async function fetchData() {
+  document.getElementById('spinner').style.display='block';
+  try {
+    const r = await fetch(CSV_URL+'&cb='+Date.now());
+    const txt = await r.text();
+    const rows = parseCSV(txt);
+    if (rows.length < 2) return;
+
+    const newStocks = [];
+    for (let i=1; i<rows.length; i++) {
+      const c = rows[i];
+      const sym = (c[0]||'').replace(/"/g,'').trim();
+      if (!sym) continue;
+      newStocks.push({
+        sym, cmp:parseFloat(c[1])||0,
+        ema100:(c[2]||'').replace(/"/g,'').trim(),
+        ema4:parseFloat(c[3])||0,
+        ema16:parseFloat(c[4])||0,
+        signal:(c[5]||'NO SIGNAL').replace(/"/g,'').trim().toUpperCase(),
+        upd:(c[6]||'').replace(/"/g,'').trim()
+      });
+    }
+
+    stocks.forEach(s => { prevCMPs[s.sym] = s.cmp; });
+    stocks = newStocks;
+    render(); updateStats();
+
+    const now = new Date().toLocaleTimeString('en-IN',{hour12:false});
+    document.getElementById('refreshTxt').textContent = `Last update: ${now}`;
+
+    // Market status
+    const ist = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
+    const h=ist.getHours(), m=ist.getMinutes();
+    const open = (h>9||(h===9&&m>=15)) && (h<15||(h===15&&m<=30));
+    document.getElementById('mktStatus').textContent = open ? 'MARKET OPEN' : 'MARKET CLOSED';
+
+  } catch(e) {
+    document.getElementById('refreshTxt').textContent = '⚠ Error fetching. Retrying...';
+  }
+  document.getElementById('spinner').style.display='none';
+}
+
+// ══ CSV PARSER ══
+function parseCSV(text) {
+  const rows=[];
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue;
+    const cols=[]; let cur='', inQ=false;
+    for (const ch of line) {
+      if (ch==='"') inQ=!inQ;
+      else if (ch===','&&!inQ) { cols.push(cur.trim()); cur=''; }
+      else cur+=ch;
+    }
+    cols.push(cur.trim());
+    rows.push(cols);
+  }
+  return rows;
+}
+
+// ══ FILTER ══
+function setFilter(f) {
+  filter=f;
+  ['All','Buy','Sell','None','Above'].forEach(x => {
+    const el=document.getElementById('f'+x);
+    if(el) el.classList.remove('active');
+  });
+  const m={ALL:'fAll',BUY:'fBuy',SELL:'fSell',NONE:'fNone',ABOVE:'fAbove'};
+  document.getElementById(m[f]).classList.add('active');
+  render();
+}
+
+function filtered() {
+  if (filter==='ALL') return stocks;
+  if (filter==='BUY') return stocks.filter(s=>s.signal.includes('BUY')&&!s.signal.includes('NO'));
+  if (filter==='SELL') return stocks.filter(s=>s.signal.includes('SELL')&&!s.signal.includes('NO'));
+  if (filter==='NONE') return stocks.filter(s=>s.signal==='NO SIGNAL');
+  if (filter==='ABOVE') return stocks.filter(s=>s.ema100.includes('ABOVE'));
+  return stocks;
+}
+
+// ══ RENDER ══
+function render() {
+  const tb = document.getElementById('tBody');
+  const data = filtered();
+  document.getElementById('fCount').textContent = `${data.length} / ${stocks.length} stocks`;
+
+  if (!data.length) {
+    tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-dim);font-family:var(--mono)">No stocks match this filter</td></tr>`;
+    return;
+  }
+
+  let html='';
+  data.forEach((s,i) => {
+    const prev = prevCMPs[s.sym];
+    let flash='';
+    if (prev!==undefined && prev!==s.cmp) flash = s.cmp>prev?'flash-up':'flash-dn';
+
+    const eClass = s.ema100.includes('ABOVE')?'above':'below';
+    const eLbl   = s.ema100.includes('ABOVE')?'▲ ABOVE':'▼ BELOW';
+
+    let sigCls='none', sigTxt='NO SIGNAL';
+    if (s.signal.includes('BUY')&&!s.signal.includes('NO')) { sigCls='buy'; sigTxt=s.signal; }
+    else if (s.signal.includes('SELL')&&!s.signal.includes('NO')) { sigCls='sell'; sigTxt=s.signal; }
+
+    html+=`<tr>
+      <td class="row-num">${i+1}</td>
+      <td><div class="sym-cell">
+        <div class="sym-badge">${s.sym.substring(0,3)}</div>
+        <div><div class="sym-name">${s.sym}</div><span class="sym-exch">NSE</span></div>
+      </div></td>
+      <td><span class="cmp-val ${flash}" id="c_${s.sym}">₹${s.cmp.toFixed(2)}</span></td>
+      <td><span class="ema-tag ${eClass}">${eLbl} 100</span></td>
+      <td class="ema-num">${s.ema4.toFixed(2)}</td>
+      <td class="ema-num">${s.ema16.toFixed(2)}</td>
+      <td><span class="sig-badge ${sigCls}"><span class="sdot"></span>${sigTxt}</span></td>
+      <td class="upd-time">${s.upd}</td>
+    </tr>`;
+  });
+  tb.innerHTML=html;
+
+  setTimeout(()=>{
+    document.querySelectorAll('.flash-up,.flash-dn').forEach(el=>{
+      el.classList.remove('flash-up','flash-dn');
+    });
+  },550);
+}
+
+// ══ STATS ══
+function updateStats() {
+  document.getElementById('sTot').textContent   = stocks.length;
+  document.getElementById('sBuy').textContent   = stocks.filter(s=>s.signal.includes('BUY')&&!s.signal.includes('NO')).length;
+  document.getElementById('sSell').textContent  = stocks.filter(s=>s.signal.includes('SELL')&&!s.signal.includes('NO')).length;
+  document.getElementById('sAbove').textContent = stocks.filter(s=>s.ema100.includes('ABOVE')).length;
+}
+
+// ══ CMP LIVE FLUCTUATION SIMULATION ══
+// Simulates realistic tick-by-tick price movement with red/green blink
+function tickFluctuation() {
+  if (!stocks.length) return;
+  const n = Math.floor(Math.random()*3)+1;
+  for (let i=0; i<n; i++) {
+    const s = stocks[Math.floor(Math.random()*stocks.length)];
+    const old = s.cmp;
+    // Realistic ±0.02% to ±0.25% movement
+    const pct = (Math.random()-0.5)*0.005;
+    s.cmp = parseFloat((old*(1+pct)).toFixed(2));
+    const el = document.getElementById('c_'+s.sym);
+    if (el) {
+      const cls = s.cmp>=old?'flash-up':'flash-dn';
+      el.textContent='₹'+s.cmp.toFixed(2);
+      el.classList.remove('flash-up','flash-dn');
+      void el.offsetWidth;
+      el.classList.add(cls);
+      setTimeout(()=>el.classList.remove('flash-up','flash-dn'),550);
+    }
+  }
+}
+
+// ══ TOAST ══
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast show';
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ══ INIT ══
+function init() {
+  startClock();
+  fetchData();
+  refreshTimer = setInterval(fetchData, 30000);      // Data refresh every 30s
+  setInterval(tickFluctuation, 1800);               // CMP blink every 1.8s
+  setTimeout(()=>toast('✓ Dashboard loaded. Refreshes every 30s.'), 800);
+}
+</script>
+</body>
+</html>
